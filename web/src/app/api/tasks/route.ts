@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { content, assignee, deadline, room, sourceDate } = body;
+    const { content, assignee, deadline, room, priority } = body;
 
     if (!content || !assignee) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       assignee,
       deadline,
       room: room || '',
-      sourceDate: sourceDate || new Date().toISOString().split('T')[0],
+      priority: priority || '',
     });
 
     return NextResponse.json({ id });

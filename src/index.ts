@@ -21,6 +21,8 @@ import {
   writeDailyReport,
 } from './writer.js';
 import { config, getChatworkLogPath } from './config.js';
+import { validateTasksWithAI } from './ai.js';
+import { notifyAllTasks, sendDailySummary } from './chatwork.js';
 import type { DailyLog, Task } from './types.js';
 
 /**
@@ -71,8 +73,15 @@ async function main(): Promise<void> {
   console.log('');
 
   // タスクを抽出
-  const allTasks = extractTasksFromLogs(logs);
+  let allTasks = extractTasksFromLogs(logs);
   console.log(`📋 抽出されたタスク: ${allTasks.length}件`);
+
+  // AI判定が有効な場合
+  if (options.ai && allTasks.length > 0) {
+    console.log('🤖 AIによるタスク判定中...');
+    allTasks = await validateTasksWithAI(allTasks);
+    console.log(`✓ AI判定後: ${allTasks.length}件`);
+  }
 
   if (allTasks.length === 0) {
     console.log('ℹ️ タスクが見つかりませんでした');
@@ -128,6 +137,15 @@ async function main(): Promise<void> {
     writeDailyReport(allTasks, date);
   }
 
+  // Chatwork通知
+  if (options.notify) {
+    console.log('');
+    const grouped = groupTasksByAssignee(allTasks);
+    await notifyAllTasks(grouped);
+    const date = logs[0]?.date || new Date().toISOString().split('T')[0];
+    await sendDailySummary(grouped, date);
+  }
+
   console.log('');
   console.log('✨ 完了！');
 }
@@ -143,6 +161,8 @@ interface Options {
   team: boolean;
   my: boolean;
   report: boolean;
+  ai: boolean;
+  notify: boolean;
 }
 
 function parseArgs(args: string[]): Options {
@@ -153,6 +173,8 @@ function parseArgs(args: string[]): Options {
     team: false,
     my: false,
     report: false,
+    ai: false,
+    notify: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -183,6 +205,12 @@ function parseArgs(args: string[]): Options {
         break;
       case '--report':
         options.report = true;
+        break;
+      case '--ai':
+        options.ai = true;
+        break;
+      case '--notify':
+        options.notify = true;
         break;
     }
   }
@@ -236,6 +264,8 @@ Options:
   --team          チームメンバーのタスクを個別ファイルに出力
   --my            自分のタスクのみ抽出して未完了タスクにマージ
   --report        日次レポートのみ生成
+  --ai            AIでタスク候補を判定（ANTHROPIC_API_KEY必要）
+  --notify        Chatworkにタスク一覧を通知（CHATWORK_API_TOKEN必要）
 
 Examples:
   npm run generate                  # 今日のログからタスク生成
@@ -243,6 +273,8 @@ Examples:
   npm run generate -- -d 2026-01-14 # 指定日のログからタスク生成
   npm run generate -- --team        # チームタスクを個別ファイルに出力
   npm run generate -- --my          # 自分のタスクのみ抽出
+  npm run generate -- --ai          # AIでタスク判定して生成
+  npm run generate -- --notify      # Chatworkに通知
 `);
 }
 

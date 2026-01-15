@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 
 interface Task {
   id: string;
-  content: string;
   assignee: string;
+  content: string;
   deadline: string;
-  room: string;
-  sourceDate: string;
+  status: string;
   createdAt: string;
+  room: string;
+  priority: string;
 }
 
 interface User {
@@ -24,6 +25,7 @@ export default function TasksPage() {
   const [user, setUser] = useState<User | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [assignees, setAssignees] = useState<string[]>([]);
+  const [notifying, setNotifying] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -77,6 +79,32 @@ export default function TasksPage() {
     router.push('/');
   };
 
+  const handleNotify = async (type: 'all' | 'personal') => {
+    setNotifying(true);
+    try {
+      const body: any = { type };
+      if (type === 'personal' && filter !== 'all') {
+        body.assignee = filter;
+      }
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || '通知を送信しました');
+      } else {
+        alert(data.error || '通知の送信に失敗しました');
+      }
+    } catch (error) {
+      console.error('通知エラー:', error);
+      alert('通知の送信に失敗しました');
+    } finally {
+      setNotifying(false);
+    }
+  };
+
   const filteredTasks = filter === 'all'
     ? tasks
     : tasks.filter((t) => t.assignee === filter);
@@ -127,6 +155,22 @@ export default function TasksPage() {
           >
             更新
           </button>
+          <button
+            onClick={() => handleNotify('all')}
+            disabled={notifying}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+          >
+            {notifying ? '送信中...' : '📢 全員に通知'}
+          </button>
+          {filter !== 'all' && (
+            <button
+              onClick={() => handleNotify('personal')}
+              disabled={notifying}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+            >
+              {notifying ? '送信中...' : `📨 ${filter}さんに通知`}
+            </button>
+          )}
         </div>
 
         {/* タスク一覧 */}

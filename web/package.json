@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup-sheets": "npx ts-node --project tsconfig.node.json scripts/setup-sheets.ts"
   },
   "dependencies": {
     "next": "^15.0.0",
@@ -15,6 +16,8 @@
     "googleapis": "^144.0.0"
   },
   "devDependencies": {
+    "dotenv": "^16.0.0",
+    "ts-node": "^10.9.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

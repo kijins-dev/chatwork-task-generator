@@ -13,7 +13,7 @@ export interface Task {
   /** 抽出元の日付 */
   sourceDate: string;
   /** タスクの種類 */
-  type: 'next_action' | 'required_action';
+  type: 'next_action' | 'required_action' | 'ai_extracted';
   /** ステータス */
   status: 'pending' | 'completed';
 }
@@ -69,4 +69,14 @@ export interface Config {
   myName: string;
   /** チームメンバーのリスト（タスク抽出対象） */
   teamMembers: string[];
+  /** Chatwork設定 */
+  chatwork: {
+    taskRoomId: string;
+    apiToken: string;
+  };
+  /** Claude API設定 */
+  claude: {
+    apiKey: string;
+    model: string;
+  };
 }

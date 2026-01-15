@@ -38,13 +38,14 @@ export async function authenticateByPin(pin: string) {
 }
 
 /**
- * 未完了タスクを取得
+ * タスクを取得
+ * シート構造: ID, 担当者, タスク内容, 期限, ステータス, 作成日, ルーム, 優先度
  */
 export async function getTasks() {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: '未完了タスク!A:H',
+      range: 'タスク!A:H',
     });
 
     const rows = res.data.values || [];
@@ -53,16 +54,41 @@ export async function getTasks() {
     // ヘッダー行をスキップしてタスクに変換
     return rows.slice(1).map((row, index) => ({
       id: row[0] || String(index + 1),
-      content: row[1] || '',
-      assignee: row[2] || '',
+      assignee: row[1] || '',
+      content: row[2] || '',
       deadline: row[3] || '',
-      room: row[4] || '',
-      sourceDate: row[5] || '',
-      createdAt: row[6] || '',
-      notifiedAt: row[7] || '',
+      status: row[4] || 'pending',
+      createdAt: row[5] || '',
+      room: row[6] || '',
+      priority: row[7] || '',
     }));
   } catch (error) {
     console.error('タスク取得エラー:', error);
+    throw error;
+  }
+}
+
+/**
+ * メンバー一覧を取得
+ */
+export async function getMembers() {
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'メンバー!A:D',
+    });
+
+    const rows = res.data.values || [];
+    if (rows.length <= 1) return [];
+
+    return rows.slice(1).map((row) => ({
+      pin: row[0] || '',
+      name: row[1] || '',
+      chatworkId: row[2] || '',
+      email: row[3] || '',
+    }));
+  } catch (error) {
+    console.error('メンバー取得エラー:', error);
     throw error;
   }
 }
@@ -72,10 +98,10 @@ export async function getTasks() {
  */
 export async function completeTask(taskId: string) {
   try {
-    // 1. 未完了タスクシートからタスクを探す
+    // 1. タスクシートからタスクを探す
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: '未完了タスク!A:H',
+      range: 'タスク!A:H',
     });
 
     const rows = res.data.values || [];
@@ -94,7 +120,7 @@ export async function completeTask(taskId: string) {
       throw new Error('タスクが見つかりません');
     }
 
-    // 2. 完了タスクシートに追加（完了日時を追加）
+    // 2. 完了タスクシートに追加（完了日を追加）
     const completedAt = new Date().toLocaleString('ja-JP');
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
@@ -105,7 +131,14 @@ export async function completeTask(taskId: string) {
       },
     });
 
-    // 3. 未完了タスクシートから削除
+    // 3. タスクシートのシートIDを取得
+    const spreadsheet = await sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+    const taskSheet = spreadsheet.data.sheets?.find(s => s.properties?.title === 'タスク');
+    const taskSheetId = taskSheet?.properties?.sheetId ?? 0;
+
+    // 4. タスクシートから削除
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,
       requestBody: {
@@ -113,7 +146,7 @@ export async function completeTask(taskId: string) {
           {
             deleteDimension: {
               range: {
-                sheetId: 0, // 未完了タスクシートのID（要確認）
+                sheetId: taskSheetId,
                 dimension: 'ROWS',
                 startIndex: taskRowIndex - 1,
                 endIndex: taskRowIndex,
@@ -133,13 +166,14 @@ export async function completeTask(taskId: string) {
 
 /**
  * タスクを追加
+ * シート構造: ID, 担当者, タスク内容, 期限, ステータス, 作成日, ルーム, 優先度
  */
 export async function addTask(task: {
   content: string;
   assignee: string;
   deadline?: string;
-  room: string;
-  sourceDate: string;
+  room?: string;
+  priority?: string;
 }) {
   try {
     const id = `T${Date.now()}`;
@@ -147,18 +181,18 @@ export async function addTask(task: {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: '未完了タスク!A:H',
+      range: 'タスク!A:H',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
           id,
-          task.content,
           task.assignee,
+          task.content,
           task.deadline || '',
-          task.room,
-          task.sourceDate,
+          'pending',
           createdAt,
-          '', // notifiedAt
+          task.room || '',
+          task.priority || '',
         ]],
       },
     });
