@@ -1,0 +1,43 @@
+name: Daily Task Extract
+
+on:
+  schedule:
+    # 毎朝10時（日本時間）= UTC 01:00
+    - cron: '0 1 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  extract-tasks:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout chatwork-task-generator
+        uses: actions/checkout@v4
+
+      - name: Checkout chatwork-logs
+        uses: actions/checkout@v4
+        with:
+          repository: kijins-dev/obsidian-chatwork-logs
+          token: ${{ secrets.CHATWORK_LOGS_PAT }}
+          path: chatwork-logs
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run task extraction
+        env:
+          OBSIDIAN_PATH: ./chatwork-logs
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
+          GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+        run: npm start
