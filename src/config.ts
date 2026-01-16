@@ -1,3 +1,4 @@
+import * as path from 'path';
 import type { Config } from './types.js';
 
 /**
@@ -32,10 +33,10 @@ export const config: Config = {
 };
 
 /**
- * パスを結合するヘルパー
+ * パスを結合するヘルパー（クロスプラットフォーム対応）
  */
 export function getPath(...segments: string[]): string {
-  return segments.join('\\');
+  return path.join(...segments);
 }
 
 /**
