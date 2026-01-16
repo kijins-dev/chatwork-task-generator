@@ -27,6 +27,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "date-fns": "^3.0.0",
-    "glob": "^10.3.10"
+    "dotenv": "^17.2.3",
+    "glob": "^10.3.10",
+    "googleapis": "^170.0.0"
   }
 }

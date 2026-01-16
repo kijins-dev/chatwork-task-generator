@@ -34,20 +34,24 @@ function parseRooms(content: string): RoomLog[] {
   const rooms: RoomLog[] = [];
 
   // Obsidianのcallout形式でルームを分割
-  // > [!note] ルーム名 または > [!info] ルーム名
-  const roomPattern = /> \[!(note|info)\] (.+?)(?=\n> \[!(?:note|info)\]|\n## |$)/gs;
-
-  // より単純なアプローチ：セクションごとに分割
-  const sections = content.split(/(?=^> \[!(?:note|info)\])/m);
+  // > [!note] ルーム名 または > [!info] ルーム名 または > [!warning] など
+  // すべてのcalloutタイプで分割する
+  const sections = content.split(/(?=^> \[!(?:note|info|warning|tip|important|caution|quote)\])/m);
 
   for (const section of sections) {
     if (!section.trim()) continue;
 
-    // ルーム名を抽出
-    const roomNameMatch = section.match(/> \[!(?:note|info)\] (.+)/);
+    // ルーム名とタイプを抽出
+    const roomNameMatch = section.match(/> \[!(note|info|warning|tip|important|caution|quote)\] (.+)/);
     if (!roomNameMatch) continue;
 
-    const roomName = roomNameMatch[1].trim();
+    const roomType = roomNameMatch[1];
+    const roomName = roomNameMatch[2].trim();
+
+    // グループチャット（note）のみ処理、それ以外はスキップ
+    if (roomType !== 'note') {
+      continue;
+    }
 
     // 次アクションを抽出
     const nextActions = extractNextActions(section);
@@ -97,6 +101,12 @@ function extractNextActions(section: string): string[] {
 
     // 「誰が・何を・いつまでに: 明確な期限指定なし」のようなプレースホルダーをスキップ
     if (trimmed.includes('誰が・何を・いつまでに')) continue;
+
+    // 担当者不明・全員のパターンをスキップ
+    if (trimmed.includes('該当者（明示されていない）')) continue;
+    if (trimmed.includes('担当者不明') || trimmed.includes('担当者未定')) continue;
+    if (trimmed.match(/^\*\*全員\*\*[：:]/)) continue;
+    if (trimmed.match(/^-\s*\*\*全員\*\*/)) continue;
 
     // リスト項目を抽出
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
