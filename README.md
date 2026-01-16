@@ -5,20 +5,19 @@ Obsidianに保存されたチャットワークログから、チーム全員の
 ## システム構成
 
 ```
-Obsidian          タスク抽出        Google
-Chatworkログ  →  (Claude AI)  →  スプレッドシート
-                                      ↓
-                    ┌─────────────────┼─────────────┐
-                    ↓                 ↓             ↓
-                 Webアプリ        Chatwork      Obsidian
-                (Next.js)         通知         バックアップ
+GitHub               タスク抽出        Google
+obsidian-chatwork-  (Claude AI)  →  スプレッドシート
+logs                      ↓              ↓
+                       Chatwork      Webアプリ
+                        通知        (Next.js)
 ```
 
 ## 機能
 
 - **タスク抽出**: チャットワークログの「次アクション」「要対応」からタスクを自動抽出
-- **AI判定**: Claude APIで発言内容とタスクを判別（実装予定）
-- **Webアプリ**: チーム全員がタスクを確認・完了管理（実装予定）
+- **AI判定**: Claude APIで発言内容とタスクを判別
+- **Google Sheets保存**: 抽出したタスクをスプレッドシートに保存
+- **Webアプリ**: チーム全員がタスクを確認・完了管理
 - **Chatwork通知**: 毎朝10時に担当者へメンション付き通知（実装予定）
 
 ## クイックスタート
@@ -27,14 +26,20 @@ Chatworkログ  →  (Claude AI)  →  スプレッドシート
 # インストール
 npm install
 
+# ビルド
+npm run build
+
 # タスク生成（今日のログ）
-npm run generate
+node dist/index.js
 
 # 特定の日付
-npm run generate -- -d 2026-01-14
+node dist/index.js -d 2026-01-14
 
 # 全ログ処理
-npm run generate -- --all
+node dist/index.js --all
+
+# Chatwork通知付き
+node dist/index.js --notify
 ```
 
 ## コマンドオプション
@@ -44,39 +49,25 @@ npm run generate -- --all
 | `-t, --today` | 今日のログのみ処理（デフォルト） |
 | `-a, --all` | すべてのログを処理 |
 | `-d, --date` | 指定日付のログを処理 |
-| `--team` | チームメンバー別にファイル出力 |
-| `--my` | 自分のタスクのみ抽出 |
-| `--report` | 日次レポートのみ生成 |
-
-## 出力ファイル
-
-`Obsidian/00_タスクBot/` に以下を出力：
-
-- `〇〇_タスク.md` - 担当者別タスク一覧
-- `チームタスク一覧.md` - 全メンバーのタスク集約
-- `タスクレポート_YYYY-MM-DD.md` - 日次サマリー
-
-## 設定
-
-`src/config.ts` で以下を設定：
-
-- `obsidianPath` - Obsidian Vaultのパス
-- `myName` - 自分の名前
-- `teamMembers` - チームメンバーリスト
+| `--notify` | Chatwork通知を送信 |
 
 ## 環境変数
 
-```
-CHATWORK_API_TOKEN  # Chatwork API認証
-ANTHROPIC_API_KEY   # Claude API（タスク判定用）
+```env
+OBSIDIAN_PATH=        # Chatworkログのパス（GitHub Actions: ../logs）
+ANTHROPIC_API_KEY=    # Claude API認証
+SPREADSHEET_ID=       # Google スプレッドシートID
+GOOGLE_SERVICE_ACCOUNT_EMAIL=  # Google サービスアカウント
+GOOGLE_PRIVATE_KEY=   # Google 秘密鍵
+CHATWORK_API_TOKEN=   # Chatwork API認証
 ```
 
 ## 開発フェーズ
 
-- [x] **Phase 1**: ログパース・タスク抽出
-- [ ] **Phase 2**: Webアプリ（Next.js + Google Sheets）
-- [ ] **Phase 3**: AI判定 + Chatwork通知
-- [ ] **Phase 4**: 自動化（毎朝10時実行）
+- [x] **Phase 1**: ログパース・タスク抽出・Google Sheets保存
+- [x] **Phase 2**: Webアプリ（Next.js + Google Sheets）
+- [ ] **Phase 3**: GitHub Actions自動実行（毎朝10時）
+- [ ] **Phase 4**: Chatwork通知
 
 ## 技術スタック
 
@@ -87,6 +78,11 @@ ANTHROPIC_API_KEY   # Claude API（タスク判定用）
 | データ | Google スプレッドシート |
 | AI | Claude API |
 | 通知 | Chatwork API |
+| CI/CD | GitHub Actions |
+
+## 関連リポジトリ
+
+- [obsidian-chatwork-logs](https://github.com/kijins-dev/obsidian-chatwork-logs) - Chatworkログ保存（n8n経由）
 
 ## ドキュメント
 
