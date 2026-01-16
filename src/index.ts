@@ -8,7 +8,7 @@ import {
   getTodayLogFile,
   getLogFileForDate,
 } from './parser.js';
-import { groupTasksByAssignee } from './extractor.js';
+import { groupTasksByAssignee } from './ai-extractor.js';
 import { config, getChatworkLogPath } from './config.js';
 import { extractTasksWithAI } from './ai-extractor.js';
 import { notifyAllTasks, sendDailySummary } from './chatwork.js';

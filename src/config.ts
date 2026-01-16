@@ -4,8 +4,8 @@ import type { Config } from './types.js';
  * デフォルト設定
  */
 export const config: Config = {
-  // Obsidian Vaultのパス
-  obsidianPath: 'C:\\Users\\kijin\\Desktop\\dev\\Obsidian',
+  // Obsidian Vaultのパス（環境変数から取得）
+  obsidianPath: process.env.OBSIDIAN_PATH || '',
 
   // チャットワークログのフォルダ名
   chatworkLogFolder: '08_Chatworkログ',
@@ -15,24 +15,6 @@ export const config: Config = {
 
   // 自分の名前（ログ上での表記）
   myName: '安部直樹',
-
-  // チームメンバーのリスト（名前とChatwork account_idのマッピング）
-  teamMembers: [
-    '安部直樹',
-    '宮内良明',
-    '福島正隆',
-    '立津雅貴',
-    '白河善貴',
-    '塩津直輝',
-    '五十嵐光',
-    '佐藤有一',
-    '皆川心人',
-    '海野洵矢',
-    '荒井晴真',
-    '本間康司',
-    '高橋良介',
-    // 必要に応じて追加
-  ],
 
   // Chatwork設定
   chatwork: {

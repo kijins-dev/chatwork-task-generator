@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { Task, DailyLog } from './types.js';
+import type { Task, DailyLog, AssigneeTasks } from './types.js';
 import { getMemberNames, getMemberIdMap, getExcludedRooms } from './sheets.js';
+import { config } from './config.js';
 
 const client = new Anthropic();
 
@@ -195,4 +196,27 @@ function deduplicateTasks(tasks: Task[]): Task[] {
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * タスクを担当者別にグループ化
+ */
+export function groupTasksByAssignee(tasks: Task[]): AssigneeTasks[] {
+  const grouped = new Map<string, Task[]>();
+
+  for (const task of tasks) {
+    const existing = grouped.get(task.assignee) || [];
+    existing.push(task);
+    grouped.set(task.assignee, existing);
+  }
+
+  // Map を配列に変換し、担当者名でソート
+  return Array.from(grouped.entries())
+    .map(([assignee, tasks]) => ({ assignee, tasks }))
+    .sort((a, b) => {
+      // 自分を最初に
+      if (a.assignee === config.myName) return -1;
+      if (b.assignee === config.myName) return 1;
+      return a.assignee.localeCompare(b.assignee, 'ja');
+    });
 }

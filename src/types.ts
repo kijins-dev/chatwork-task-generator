@@ -67,8 +67,6 @@ export interface Config {
   taskOutputFolder: string;
   /** 自分の名前（タスクの「自分」を置換するため） */
   myName: string;
-  /** チームメンバーのリスト（タスク抽出対象） */
-  teamMembers: string[];
   /** Chatwork設定 */
   chatwork: {
     taskRoomId: string;
